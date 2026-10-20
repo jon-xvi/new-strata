@@ -88,17 +88,17 @@ const FeaturedCard = ({ t, onClick }) => {
       }}
     >
       <div style={{
-        height: '72px', background: p.secondary,
+        height: '110px', background: p.secondary,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', overflow: 'hidden',
       }}>
         {brand ? (
           <span style={{
-            width: '40px', height: '40px', borderRadius: '10px', background: '#fff',
+            width: '46px', height: '46px', borderRadius: '12px', background: '#fff',
             border: '1px solid rgba(0,0,0,0.08)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <img src={brand.logo} alt="" width="28" height="28" style={{ objectFit: 'contain' }} />
+            <img src={brand.logo} alt="" width="32" height="32" style={{ objectFit: 'contain' }} />
           </span>
         ) : (
           <span style={{
