@@ -3597,52 +3597,160 @@ This document serves as our living source of truth.`
 
 
           {/* Brand Bible onboarding — replaces the whole tab until a brand source exists */}
-          {activeTab === 'brand' && !hasBrandContext && (
+          {activeTab === 'brand' && !hasBrandContext && (() => {
+            const CHECKLIST = [
+              {
+                id: 'colors', label: 'Brand colors', desc: 'Pick a palette or define custom colors',
+                done: Boolean(project?.brand?.primaryColor),
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="var(--accent)" stroke="none"/>
+                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" opacity="0.4"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'typography', label: 'Typography', desc: 'Choose heading and body font pairings',
+                done: Boolean(project?.brand?.headingFont),
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'logo', label: 'Logo', desc: 'Upload or generate a logo mark',
+                done: Boolean(project?.brand?.logoPreview),
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="4"/>
+                    <path d="M8 17l3-4 2 2 3-5 4 7" opacity="0.6"/>
+                    <circle cx="9" cy="9" r="2" fill="var(--accent)" stroke="none"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'voice', label: 'Voice & tone', desc: 'Define brand personality keywords',
+                done: (project?.brand?.toneKeywords || []).length > 0,
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 1v6M8 4v4M16 4v4M4 11h16v2a8 8 0 01-16 0v-2z"/>
+                    <path d="M12 19v4"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'context', label: 'Brand context sources', desc: 'Import from Figma, website, or tokens',
+                done: completeness.done > 0,
+                action: () => setStartChoice(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path d="M12 8v4l3 3"/>
+                  </svg>
+                ),
+              },
+            ];
+            const doneCount = CHECKLIST.filter(c => c.done).length;
+            const total = CHECKLIST.length;
+            const pct = Math.round((doneCount / total) * 100);
+            const nextItem = CHECKLIST.find(c => !c.done);
+            const r = 28; const circ = 2 * Math.PI * r;
+            return (
             <div style={{ maxWidth: '1200px' }}>
+              {/* Hero banner */}
               <div style={{
                 background: 'linear-gradient(135deg, var(--accent-glow) 0%, var(--bg-secondary) 55%)',
-                border: '1px solid var(--border)',
-                borderRadius: '16px',
-                padding: '2.5rem',
+                border: '0.5px solid var(--border)',
+                borderRadius: '12px',
+                padding: '2rem 2.5rem',
+                display: 'flex', alignItems: 'center', gap: '2rem',
+                marginBottom: '1.5rem',
               }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  background: 'var(--accent-glow)', border: '1px solid var(--accent)',
-                  color: 'var(--accent)', borderRadius: '100px',
-                  padding: '0.3rem 0.85rem', fontSize: '0.7rem', fontWeight: 700,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}>✨ Brand Context Engine</span>
-
-                <h2 style={{ fontSize: '1.9rem', fontWeight: 700, margin: '1.25rem 0 0.85rem', color: 'var(--text-primary)' }}>
-                  Setup your Brand Context
-                </h2>
-
-                <p style={{ fontSize: '0.92rem', lineHeight: 1.7, color: 'var(--text-secondary)', maxWidth: '46rem', margin: 0 }}>
-                  Define your brand identity using descriptions, logo assets, website links, Figma
-                  variables, or JSON tokens. Strata's AI will parse these sources to extract colors,
-                  typography, and automatically bootstrap your design system tokens and component specs.
-                </p>
-
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.9rem', marginBottom: 0 }}>
-                  {completeness.done} of {completeness.total} provided &middot; add any of it whenever you like.
-                </p>
-
-                <button
-                  onClick={() => setStartChoice(true)}
-                  className="btn btn-primary"
-                  style={{
-                    marginTop: '1.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.7rem 1.5rem', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600,
-                  }}
-                >
-                  Get Started
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                {/* Progress ring */}
+                <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                  <svg width="72" height="72" viewBox="0 0 72 72">
+                    <circle cx="36" cy="36" r={r} fill="none" stroke="var(--border)" strokeWidth="4"/>
+                    <circle cx="36" cy="36" r={r} fill="none" stroke="var(--accent)" strokeWidth="4"
+                      strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ - (circ * pct / 100)}
+                      transform="rotate(-90 36 36)" style={{ transition: 'stroke-dashoffset 0.6s ease' }}/>
                   </svg>
-                </button>
+                  <span style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)',
+                  }}>{pct}%</span>
+                </div>
+                <div>
+                  <h2 style={{
+                    fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 600,
+                    color: 'var(--text-primary)', margin: '0 0 0.35rem',
+                  }}>Set up your brand</h2>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    Complete these steps to build your design system. {doneCount} of {total} done.
+                  </p>
+                </div>
+              </div>
+
+              {/* Checklist items */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {CHECKLIST.map((item) => {
+                  const isNext = nextItem && item.id === nextItem.id;
+                  return (
+                    <div key={item.id} style={{
+                      display: 'flex', alignItems: 'center', gap: '1rem',
+                      padding: '0.85rem 1.25rem',
+                      background: item.done ? 'var(--bg-secondary)' : isNext ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                      border: isNext ? '1px solid var(--accent)' : '0.5px solid var(--border)',
+                      borderRadius: '10px',
+                      opacity: item.done ? 0.6 : 1,
+                      transition: 'all 0.2s ease',
+                    }}>
+                      {/* Status indicator */}
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '8px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: item.done ? 'rgba(52,211,153,0.12)' : isNext ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                        color: item.done ? '#34d399' : isNext ? 'var(--accent)' : 'var(--text-tertiary)',
+                      }}>
+                        {item.done ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        ) : item.icon}
+                      </div>
+
+                      {/* Label */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '0.88rem', fontWeight: 550, color: 'var(--text-primary)',
+                          textDecoration: item.done ? 'line-through' : 'none',
+                        }}>{item.label}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.1rem' }}>
+                          {item.desc}
+                        </div>
+                      </div>
+
+                      {/* Action */}
+                      {!item.done && (
+                        <button onClick={item.action} style={{
+                          padding: '0.4rem 0.9rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600,
+                          fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+                          background: isNext ? 'var(--accent)' : 'transparent',
+                          color: isNext ? '#fff' : 'var(--accent)',
+                          border: isNext ? 'none' : '1px solid var(--accent)',
+                        }}>Set up</button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {activeTab === 'brand' && hasBrandContext && (
             <div style={{ maxWidth: '1200px' }}>

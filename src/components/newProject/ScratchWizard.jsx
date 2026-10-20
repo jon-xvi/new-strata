@@ -1,9 +1,9 @@
 // The build-from-scratch wizard, run from inside a project.
 //
-// This used to live on /projects/new and end by creating the project. Now the project
-// already exists — you reach this from Get Started on the Brand Bible — so it ends by
-// applying its answers to the open project through the same `onApply` contract the
-// Brand Context Engine uses.
+// Streamlined from 5 steps to 3:
+//   Step 1: Brand & Colors (basics + palette selection)
+//   Step 2: Type & Logo (typography + logo upload/generate)
+//   Step 3: Voice (tone keywords)
 //
 // Suggestions on the Colors/Typography steps come from a deterministic lookup on the
 // industry + vibe answers. No AI, no backend.
@@ -17,18 +17,18 @@ import {
   BasicsStep, ColorsStep, TypographyStep, LogoStep, VoiceStep, ReviewStep,
 } from './ScratchSteps';
 
-const SCRATCH_STEPS = ['basics', 'colors', 'typography', 'logo', 'voice'];
-const STEP_LABELS = { basics: 'Basics', colors: 'Colors', typography: 'Type', logo: 'Logo', voice: 'Voice' };
+const SCRATCH_STEPS = ['brand-colors', 'type-logo', 'voice'];
+const STEP_LABELS = { 'brand-colors': 'Brand & colors', 'type-logo': 'Type & logo', voice: 'Voice' };
 
 const primaryBtn = (enabled) => ({
-  padding: '0.65rem 1.4rem', borderRadius: '999px', border: 'none',
+  padding: '0.65rem 1.4rem', borderRadius: '8px', border: 'none',
   background: enabled ? 'var(--accent)' : 'var(--bg-tertiary)',
   color: enabled ? '#fff' : 'var(--text-tertiary)',
   fontSize: '0.88rem', fontWeight: 600, fontFamily: 'inherit',
   cursor: enabled ? 'pointer' : 'not-allowed',
 });
 const ghostBtn = {
-  padding: '0.65rem 1.1rem', borderRadius: '999px', border: '1px solid var(--border)',
+  padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border)',
   background: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem',
   fontFamily: 'inherit', cursor: 'pointer',
 };
@@ -49,8 +49,8 @@ const Stepper = ({ current }) => {
               color: active ? 'var(--accent)' : complete ? 'var(--text-secondary)' : 'var(--text-tertiary)',
             }}>
               <span style={{
-                width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem',
+                width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.66rem',
                 background: active ? 'var(--accent)' : complete ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
                 border: '1px solid ' + (active || complete ? 'var(--accent)' : 'var(--border)'),
                 color: active ? '#fff' : complete ? 'var(--accent)' : 'var(--text-tertiary)',
@@ -58,7 +58,7 @@ const Stepper = ({ current }) => {
               {STEP_LABELS[s]}
             </span>
             {idx < SCRATCH_STEPS.length - 1 && (
-              <span style={{ width: '18px', height: '1px', background: 'var(--border)' }} />
+              <span style={{ width: '24px', height: '1px', background: 'var(--border)' }} />
             )}
           </span>
         );
@@ -68,50 +68,35 @@ const Stepper = ({ current }) => {
 };
 
 export default function ScratchWizard({ projectName, initialData, onClose, onApply, onSaveContext }) {
-  const [stage, setStage] = useState('basics');
-  // A lazy initialiser, mount-only on purpose. Syncing `initialData` through an effect
-  // would wipe the user's edits every time the caller re-rendered with a fresh object.
-  //
-  // A template seed works here *because* of the two seeding effects below: they fill
-  // palette and pairing only while unset, so pre-filled values survive — a template is
-  // indistinguishable from a manual choice, which is exactly what those effects protect.
+  const [stage, setStage] = useState('brand-colors');
   const [data, setData] = useState(() => ({
     industry: null, primaryVibe: null, customIndustry: '',
     paletteId: null, fontPairingId: null,
     customPalette: {}, customPairing: {},
     logoMode: 'generate', logoDataUrl: null,
     voiceTags: [],
-    // A real scale rather than none, which is what a from-scratch run had. The Typography
-    // step shows it and can change it; a template's own scale overrides it just below.
     scale: DEFAULT_SCALE,
     ...(initialData || {}),
-    // After the spread, always: the name belongs to the project, never to a template.
-    // Every specimen and the review row read this, and it was never set at all before —
-    // so they all said "Your brand" while the project had a name.
     projectName: projectName || '',
   }));
 
-  // accepts a patch object or a function of the previous data, so callers that derive
-  // from current values are not exposed to a stale closure
   const set = (patch) => setData(prev => ({ ...prev, ...(typeof patch === 'function' ? patch(prev) : patch) }));
 
-  // Seed the palette and pairing from the answers, but only while still unset — so going
-  // back and choosing manually is never overwritten on re-entry.
+  // Seed palette and pairing from answers while unset
   useEffect(() => {
-    if (stage !== 'colors' && stage !== 'typography') return;
+    if (stage !== 'brand-colors' && stage !== 'type-logo') return;
     const s = getSuggestion(data.industry, data.primaryVibe);
     if (!s) return;
-    if (stage === 'colors' && !data.paletteId) set({ paletteId: s.paletteId });
-    if (stage === 'typography' && !data.fontPairingId) set({ fontPairingId: s.fontPairingId });
+    if (stage === 'brand-colors' && !data.paletteId) set({ paletteId: s.paletteId });
+    if (stage === 'type-logo' && !data.fontPairingId) set({ fontPairingId: s.fontPairingId });
 
-    // give the custom colour inputs a starting point rather than #000000
-    if (stage === 'colors' && !data.customPalette.primary) {
+    if (stage === 'brand-colors' && !data.customPalette.primary) {
       const base = paletteById(s.paletteId);
       if (base) set({ customPalette: { primary: base.primary, secondary: base.secondary, accent: base.accent } });
     }
   }, [stage, data.industry, data.primaryVibe, data.paletteId, data.fontPairingId, data.customPalette.primary]);
 
-  // The primary vibe is a tone too, so pre-check it rather than asking twice
+  // Pre-check primary vibe as a voice tag
   useEffect(() => {
     if (stage === 'voice' && data.primaryVibe && data.voiceTags.length === 0) {
       set({ voiceTags: [data.primaryVibe] });
@@ -120,24 +105,15 @@ export default function ScratchWizard({ projectName, initialData, onClose, onApp
 
   const stepIndex = SCRATCH_STEPS.indexOf(stage);
   const canContinue = () => {
-    if (stage === 'basics') return Boolean(data.industry && data.primaryVibe);
-    if (stage === 'colors') {
-      if (data.paletteId === CUSTOM_ID) return Boolean(resolvePalette(data)?.primary);
-      return Boolean(data.paletteId);
-    }
-    if (stage === 'typography') {
-      if (data.fontPairingId === CUSTOM_ID) return Boolean(resolvePairing(data));
-      return Boolean(data.fontPairingId);
-    }
-    return true;   // logo and voice are both skippable
+    if (stage === 'brand-colors') return Boolean(data.industry && data.primaryVibe);
+    return true; // type-logo and voice are both optional/skippable
   };
 
   const goNext = () => {
     if (stepIndex >= 0 && stepIndex < SCRATCH_STEPS.length - 1) setStage(SCRATCH_STEPS[stepIndex + 1]);
     else if (stage === 'voice') setStage('review');
   };
-  // Back on the first step leaves the wizard — there is no entry screen to return to now
-  // that the project already exists.
+
   const goBack = () => {
     if (stage === 'review') setStage('voice');
     else if (stepIndex > 0) setStage(SCRATCH_STEPS[stepIndex - 1]);
@@ -147,8 +123,6 @@ export default function ScratchWizard({ projectName, initialData, onClose, onApp
   const finish = () => {
     const palette = resolvePalette(data);
     const pairing = resolvePairing(data);
-    // An uploaded logo genuinely is a Brand Images source, so record it as one. Nothing
-    // else is marked provided — the other engine sources really are still empty.
     if (data.logoDataUrl && onSaveContext) {
       onSaveContext({ images: { items: [{ name: 'Logo', dataUrl: data.logoDataUrl }], extraction: null } });
     }
@@ -167,11 +141,6 @@ export default function ScratchWizard({ projectName, initialData, onClose, onApp
       tokens: tokensFromChoices(palette, pairing, resolveScale(data)),
     });
   };
-
-  const StepBody = {
-    basics: BasicsStep, colors: ColorsStep, typography: TypographyStep,
-    logo: LogoStep, voice: VoiceStep,
-  }[stage];
 
   return (
     <div style={{
@@ -204,11 +173,38 @@ export default function ScratchWizard({ projectName, initialData, onClose, onApp
 
       <div style={{ width: '100%', maxWidth: '840px', margin: '0 auto', padding: '2.5rem 1.5rem 4rem' }}>
         <Stepper current={stage} />
-        {stage === 'review' ? <ReviewStep data={data} /> : <StepBody data={data} set={set} />}
+
+        {stage === 'review' ? (
+          <ReviewStep data={data} />
+        ) : stage === 'brand-colors' ? (
+          <>
+            <BasicsStep data={data} set={set} />
+            <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+              <ColorsStep data={data} set={set} />
+            </div>
+          </>
+        ) : stage === 'type-logo' ? (
+          <>
+            <TypographyStep data={data} set={set} />
+            <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+              <LogoStep data={data} set={set} />
+            </div>
+          </>
+        ) : (
+          <VoiceStep data={data} set={set} />
+        )}
 
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2.5rem', alignItems: 'center' }}>
           <button style={ghostBtn} onClick={goBack}>Back</button>
           <div style={{ flex: 1 }} />
+          {stage !== 'review' && stage !== 'brand-colors' && (
+            <button
+              style={{ ...ghostBtn, border: 'none', color: 'var(--text-tertiary)' }}
+              onClick={goNext}
+            >
+              Skip
+            </button>
+          )}
           {stage === 'review'
             ? <button style={primaryBtn(true)} onClick={finish}>Apply to project</button>
             : <button style={primaryBtn(canContinue())} disabled={!canContinue()} onClick={goNext}>Continue</button>}
