@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import TemplateGallery from '../components/newProject/TemplateGallery';
 import { TEMPLATES } from '../components/newProject/templateData';
 import { pairingById } from '../components/newProject/designSystemData';
 import { brandAssetsFor } from '../data/brandAssets';
 
-const FEATURED_IDS = TEMPLATES.slice(0, 6).map(t => t.id);
+const STYLE_FILTERS = ['All', ...new Set(TEMPLATES.map(t => t.vibe))];
 
 const inputStyle = {
   width: '100%', padding: '0.7rem 0.85rem', borderRadius: '8px',
@@ -16,22 +15,6 @@ const inputStyle = {
 };
 
 // --- Illustrative SVGs for path cards ---
-
-const TemplateIllustration = () => (
-  <svg viewBox="0 0 120 64" fill="none" style={{ width: '100%', marginBottom: '0.6rem' }}>
-    <rect x="4" y="4" width="50" height="36" rx="6" fill="var(--bg-tertiary)" stroke="var(--accent)" strokeWidth="0.5"/>
-    <rect x="10" y="10" width="38" height="8" rx="3" fill="var(--accent)" opacity="0.6"/>
-    <rect x="10" y="22" width="24" height="4" rx="2" fill="var(--border)"/>
-    <rect x="10" y="30" width="32" height="4" rx="2" fill="var(--border)"/>
-    <rect x="66" y="4" width="50" height="36" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="72" y="10" width="38" height="8" rx="3" fill="var(--text-tertiary)" opacity="0.4"/>
-    <rect x="72" y="22" width="24" height="4" rx="2" fill="var(--border)"/>
-    <rect x="72" y="30" width="32" height="4" rx="2" fill="var(--border)"/>
-    <rect x="34" y="44" width="52" height="16" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="40" y="49" width="14" height="6" rx="3" fill="var(--accent)" opacity="0.3"/>
-    <rect x="58" y="49" width="14" height="6" rx="3" fill="var(--text-secondary)" opacity="0.2"/>
-  </svg>
-);
 
 const ScratchIllustration = () => (
   <svg viewBox="0 0 120 64" fill="none" style={{ width: '100%', marginBottom: '0.6rem' }}>
@@ -134,8 +117,8 @@ export default function NewProjectPage() {
   const navigate = useNavigate();
   const { addProject } = useProjects();
   const [projectName, setProjectName] = useState('');
-  const [activePath, setActivePath] = useState('template');
-  const [showFullGallery, setShowFullGallery] = useState(false);
+  const [activePath, setActivePath] = useState(null);
+  const [styleFilter, setStyleFilter] = useState('All');
 
   const named = projectName.trim().length > 0;
 
@@ -175,7 +158,7 @@ export default function NewProjectPage() {
     else if (path === 'import') create('engine');
   };
 
-  const featured = TEMPLATES.filter(t => FEATURED_IDS.includes(t.id));
+  const filtered = styleFilter === 'All' ? TEMPLATES : TEMPLATES.filter(t => t.vibe === styleFilter);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
@@ -190,12 +173,12 @@ export default function NewProjectPage() {
         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>New project</span>
       </header>
 
-      <div style={{ width: '100%', maxWidth: showFullGallery ? '1100px' : '820px', margin: '0 auto', padding: '3rem 2.5rem 4rem' }}>
+      <div style={{ width: '100%', maxWidth: '820px', margin: '0 auto', padding: '3rem 2.5rem 4rem' }}>
         <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 500, margin: '0 0 0.25rem' }}>
           Create your design system
         </h1>
         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 2rem', lineHeight: 1.6 }}>
-          Name your project and pick how you want to start. You can change everything later.
+          Give your project a name, then choose how to get started.
         </p>
 
         {/* Project name */}
@@ -213,16 +196,15 @@ export default function NewProjectPage() {
           />
         </div>
 
-        {/* Path cards */}
+        {/* Quick-start cards */}
         <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.75rem' }}>
-          Choose a starting point
+          Build your own way
         </label>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '2.75rem' }}>
           {[
-            { key: 'template', label: 'Use a template', desc: 'Ready-made palette and type pairing to start from.', Illustration: TemplateIllustration },
-            { key: 'scratch', label: 'Start fresh', desc: 'Answer a few questions, get suggestions.', Illustration: ScratchIllustration },
-            { key: 'import', label: 'Import existing', desc: 'Figma, live site, or tokens.json.', Illustration: ImportIllustration },
+            { key: 'scratch', label: 'Start from scratch', desc: 'Pick colors, fonts, and voice with a guided setup.', Illustration: ScratchIllustration },
+            { key: 'import', label: 'Import what you have', desc: 'Bring in tokens from Figma, a live site, or a JSON file.', Illustration: ImportIllustration },
           ].map(opt => (
             <button
               key={opt.key}
@@ -239,50 +221,50 @@ export default function NewProjectPage() {
               <div style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
                 {opt.label}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                 {opt.desc}
               </div>
             </button>
           ))}
         </div>
 
-        {/* Featured templates */}
-        {!showFullGallery && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-primary)' }}>Featured templates</span>
+        {/* Templates with style filter */}
+        <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ fontSize: '0.92rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+            Or start from a template
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', margin: '0 0 0.85rem', lineHeight: 1.5 }}>
+            Pre-built palettes, type pairings, and brand settings you can customize later.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+            {STYLE_FILTERS.map(s => (
               <button
-                onClick={() => setShowFullGallery(true)}
-                style={{ background: 'none', border: 'none', fontSize: '0.78rem', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                key={s}
+                onClick={() => setStyleFilter(s)}
+                className="style-chip"
+                style={{
+                  padding: '0.3rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem',
+                  fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+                  background: styleFilter === s ? 'var(--accent)' : 'var(--bg-tertiary)',
+                  color: styleFilter === s ? '#fff' : 'var(--text-secondary)',
+                  border: styleFilter === s ? '1px solid var(--accent)' : '1px solid var(--border)',
+                }}
               >
-                Browse all {TEMPLATES.length} →
+                {s}
               </button>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-              {featured.map(t => (
-                <FeaturedCard
-                  key={t.id}
-                  t={t}
-                  onClick={() => handleTemplatePick(t)}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Full gallery (expanded) */}
-        {showFullGallery && (
-          <>
-            <button
-              onClick={() => setShowFullGallery(false)}
-              style={{ background: 'none', border: 'none', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-            >
-              ‹ Back to overview
-            </button>
-            <TemplateGallery />
-          </>
-        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '0.25rem' }}>
+          {filtered.map(t => (
+            <FeaturedCard
+              key={t.id}
+              t={t}
+              onClick={() => handleTemplatePick(t)}
+            />
+          ))}
+        </div>
 
         {/* Footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)' }}>
@@ -311,6 +293,7 @@ export default function NewProjectPage() {
         .new-path-card:hover { border-color: var(--border-bright) !important; }
         .new-tpl-card:hover { border-color: var(--border-bright) !important; transform: translateY(-2px); }
         .new-tpl-card { transition: border-color 0.15s, transform 0.15s; }
+        .style-chip:hover { border-color: var(--border-bright) !important; }
       `}} />
     </div>
   );
