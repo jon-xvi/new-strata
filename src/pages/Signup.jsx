@@ -34,10 +34,11 @@ const Signup = () => {
         top: 0,
         height: '100vh',
         overflow: 'hidden',
+        background: 'radial-gradient(ellipse at 20% 80%, rgba(120, 0, 180, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(120, 0, 180, 0.1) 0%, transparent 50%), #0a0a12',
       }} className="auth-visual-side">
         <img
           src={authVisual}
-          alt="Design system delivery flow"
+          alt=""
           style={{
             width: '100%',
             height: '100%',
@@ -199,9 +200,13 @@ const Signup = () => {
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
         </div>
 
-        <button className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '1.1rem' }}>
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '20px' }} />
-          Sign up with Google
+        <button className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1.1rem' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="9"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          Sign up with Charisol
         </button>
 
         <p style={{ marginTop: '2.5rem', fontSize: '1rem', color: 'var(--text-secondary)', textAlign: 'center' }}>

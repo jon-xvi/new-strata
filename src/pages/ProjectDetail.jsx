@@ -35,6 +35,7 @@ import {
 import { modelsFor } from '../data/modelCatalogue';
 import TemplateGallery, { TemplateCard } from '../components/newProject/TemplateGallery';
 import { TEMPLATES } from '../components/newProject/templateData';
+import TemplatePreviewPanel from '../components/newProject/TemplatePreviewPanel';
 import BrandContextEngine from '../components/BrandContextEngine';
 import StartChoice from '../components/StartChoice';
 import ScratchWizard from '../components/newProject/ScratchWizard';
@@ -437,6 +438,7 @@ function ProjectDetailInner() {
   // the engine — those name one specific source, so a choice would be wrong there.
   const [startChoice, setStartChoice] = useState(false);
   const [scratchWizard, setScratchWizard] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
   const [toggledTokenFolders, setToggledTokenFolders] = useState(() => new Set());
   const [previewComponentId, setPreviewComponentId] = useState(null);
   // Which token's dependents are showing. Shares the rail with previewComponentId, so
@@ -6611,7 +6613,15 @@ This document serves as our living source of truth.`
                             <div className="pd-forge-examples" style={{
                               display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '1rem',
                             }}>
-                              {shown.map(t => <TemplateCard key={t.id} t={t} />)}
+                              {shown.map(t => <TemplateCard key={t.id} t={t} onPreview={setPreviewTemplate} onUse={(tpl) => {
+                                setScratchWizard({
+                                  paletteId: tpl.paletteId,
+                                  fontPairingId: tpl.pairingId,
+                                  industry: tpl.industry,
+                                  primaryVibe: tpl.vibe,
+                                  scale: tpl.scale,
+                                });
+                              }} />)}
                             </div>
                             <p style={{ margin: '0.9rem 0 0', fontSize: '0.75rem', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
                               {project.name} has no design system yet, so anything made here comes
@@ -8387,7 +8397,16 @@ This document serves as our living source of truth.`
             {/* Under the two cards. Each links to its own page in a new tab, and applying
                 happens there — so a template no longer seeds *this* project's wizard; it
                 creates one of its own. That is the cost of the card being a plain link. */}
-            <TemplateGallery />
+            <TemplateGallery onPreview={setPreviewTemplate} onUse={(t) => {
+              setStartChoice(false);
+              setScratchWizard({
+                paletteId: t.paletteId,
+                fontPairingId: t.pairingId,
+                industry: t.industry,
+                primaryVibe: t.vibe,
+                scale: t.scale,
+              });
+            }} />
           </div>
         </div>
       )}
@@ -8413,6 +8432,22 @@ This document serves as our living source of truth.`
           onApply={applyBrandContext}
         />
       )}
+
+      <TemplatePreviewPanel
+        template={previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        onUse={(t) => {
+          setPreviewTemplate(null);
+          setStartChoice(false);
+          setScratchWizard({
+            paletteId: t.paletteId,
+            fontPairingId: t.pairingId,
+            industry: t.industry,
+            primaryVibe: t.vibe,
+            scale: t.scale,
+          });
+        }}
+      />
     </div>
   );
 }

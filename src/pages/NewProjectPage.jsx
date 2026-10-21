@@ -4,6 +4,7 @@ import { useProjects } from '../context/ProjectContext';
 import { TEMPLATES } from '../components/newProject/templateData';
 import { pairingById } from '../components/newProject/designSystemData';
 import { brandAssetsFor } from '../data/brandAssets';
+import TemplatePreviewPanel from '../components/newProject/TemplatePreviewPanel';
 
 const STYLE_FILTERS = ['All', ...new Set(TEMPLATES.map(t => t.vibe))];
 
@@ -55,19 +56,19 @@ const ImportIllustration = () => (
 
 // --- Featured template mini-card ---
 
-const FeaturedCard = ({ t, onClick }) => {
+const FeaturedCard = ({ t, onClick, onPreview }) => {
   const pair = pairingById(t.pairingId);
   const brand = brandAssetsFor(t.id);
   const p = t.palette;
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className="new-tpl-card"
       style={{
         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-        borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', padding: 0,
+        borderRadius: '10px', overflow: 'hidden', padding: 0,
         textAlign: 'left', fontFamily: 'inherit', width: '100%',
+        display: 'flex', flexDirection: 'column',
       }}
     >
       <div style={{
@@ -92,22 +93,44 @@ const FeaturedCard = ({ t, onClick }) => {
           </span>
         )}
       </div>
-      <div style={{ padding: '0.7rem 0.85rem' }}>
-        <div style={{ fontSize: '0.84rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+      <div style={{ padding: '0.7rem 0.85rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
+        <div style={{ fontSize: '0.84rem', fontWeight: 500, color: 'var(--text-primary)' }}>
           {t.name}
         </div>
-        <div style={{ display: 'flex', gap: '3px', marginBottom: '0.25rem' }}>
+        <div style={{ display: 'flex', gap: '3px' }}>
           <span style={{ flex: 1, height: 6, borderRadius: 3, background: p.primary }} />
           <span style={{ flex: 1, height: 6, borderRadius: 3, background: p.secondary }} />
           <span style={{ flex: 1, height: 6, borderRadius: 3, background: p.accent }} />
         </div>
         {pair && (
-          <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '0.15rem' }}>
+          <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
             {pair.heading} + {pair.body}
           </div>
         )}
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onPreview ? onPreview(t) : window.open('/templates/' + t.id, '_blank'); }}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0.45rem', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 600,
+              fontFamily: 'inherit', cursor: 'pointer',
+              background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+            }}
+          >Preview</button>
+          <button
+            type="button"
+            onClick={onClick}
+            style={{
+              flex: 1, padding: '0.45rem', borderRadius: '8px', fontSize: '0.76rem',
+              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
+              background: 'var(--accent)', color: '#fff',
+            }}
+          >Use template</button>
+        </div>
       </div>
-    </button>
+    </div>
   );
 };
 
@@ -119,6 +142,7 @@ export default function NewProjectPage() {
   const [projectName, setProjectName] = useState('');
   const [activePath, setActivePath] = useState(null);
   const [styleFilter, setStyleFilter] = useState('All');
+  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   const named = projectName.trim().length > 0;
 
@@ -262,6 +286,7 @@ export default function NewProjectPage() {
               key={t.id}
               t={t}
               onClick={() => handleTemplatePick(t)}
+              onPreview={setPreviewTemplate}
             />
           ))}
         </div>
@@ -295,6 +320,12 @@ export default function NewProjectPage() {
         .new-tpl-card { transition: border-color 0.15s, transform 0.15s; }
         .style-chip:hover { border-color: var(--border-bright) !important; }
       `}} />
+
+      <TemplatePreviewPanel
+        template={previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        onUse={(t) => { setPreviewTemplate(null); handleTemplatePick(t); }}
+      />
     </div>
   );
 }
