@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import authVisual from '../assets/auth-visual.png';
+import authVisual from '../assets/auth-visual.webp';
 import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
@@ -28,45 +28,23 @@ const Signup = () => {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Visual Side */}
-      <div style={{ 
-        flex: '1', 
-        position: 'relative', 
-        // No inline `display`. It used to say 'none' with a '@media (min-width: 1024px)'
-        // key beside it — React has no such thing, so it logged "Unsupported style
-        // property" on every render and the inline none beat the stylesheet at every
-        // width, meaning this panel never appeared at all. The <style> block below
-        // already hides it under 1024px, which is all that was wanted.
+      <div style={{
+        flex: '1',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        overflow: 'hidden',
       }} className="auth-visual-side">
-        <img 
-          src={authVisual} 
-          alt="Auth Visual" 
-          style={{ 
-            width: '100%', 
-            height: '100%', 
+        <img
+          src={authVisual}
+          alt="Design system delivery flow"
+          style={{
+            width: '100%',
+            height: '100%',
             objectFit: 'cover',
-            opacity: 0.8
-          }} 
+            objectPosition: 'center center',
+          }}
         />
-        <div style={{ 
-          position: 'absolute', 
-          bottom: '4rem', 
-          left: '4rem', 
-          right: '4rem',
-          zIndex: 10
-        }}>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'white' }}>Build for the future of design ops.</h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: '500px' }}>
-            Join thousands of teams scaling their design system infrastructure with runtime delivery.
-          </p>
-        </div>
-        <div style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0, 
-          background: 'linear-gradient(to top, var(--bg) 0%, transparent 40%)' 
-        }}></div>
       </div>
 
       {/* Form Side */}
