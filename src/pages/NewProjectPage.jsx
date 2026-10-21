@@ -1,43 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import StartChoice from '../components/StartChoice';
-import TemplateGallery from '../components/newProject/TemplateGallery';
-
-// Creating a project is two steps: name it, then choose how the brand gets built.
-//
-// The choice used to live behind Get Started on the project's Brand Bible, which meant the
-// Brand Context Engine — five steps of real extraction work — sat two clicks past a screen
-// where nothing appeared to be happening. It is offered here instead, with the cards shared
-// from StartChoice so both entry points promise the same two things.
-//
-// The project itself is created the moment a path is picked rather than on step one: the
-// engine reads and writes a real project, so there has to be one for it to work on.
-
-const field = {
-  width: '100%', background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-  borderRadius: '10px', padding: '0.7rem 0.9rem', color: 'var(--text-primary)',
-  fontSize: '0.9rem', fontFamily: 'inherit',
-};
-const label = {
-  fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.07em',
-  color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: '0.5rem',
-};
-
-const STEPS = ['Name', 'Set up the brand'];
 
 export default function NewProjectPage() {
   const navigate = useNavigate();
   const { addProject } = useProjects();
   const [projectName, setProjectName] = useState('');
-  const [step, setStep] = useState(1);
 
   const named = projectName.trim().length > 0;
 
-  // No brand, no tokens: addProject already defaults to an empty token map, and a project
-  // the user creates should start genuinely empty rather than pre-filled with guesses.
-  // `setup` rides along in route state so the project opens with that wizard running.
-  const create = (setup) => {
+  const create = () => {
     if (!named) return;
     const project = addProject({
       title: projectName.trim(),
@@ -45,144 +17,178 @@ export default function NewProjectPage() {
       color: '#FC0694',
       brand: { toneKeywords: [] },
     });
-    navigate('/projects/' + project.id, setup ? { state: { setup } } : undefined);
+    navigate('/projects/' + project.id, { state: { created: true } });
   };
 
+  const displayName = named ? projectName.trim() : 'Untitled';
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      minHeight: '100vh', background: 'var(--bg)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Header */}
       <header style={{
         display: 'flex', alignItems: 'center', gap: '0.5rem', height: '56px', flexShrink: 0,
         padding: '0 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)',
       }}>
-        <Link to="/projects" style={{ textDecoration: 'none', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+        <Link to="/projects" style={{
+          textDecoration: 'none', fontFamily: 'var(--font-heading)',
+          fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)',
+        }}>
           Strata<span style={{ color: 'var(--accent)' }}>.</span>
         </Link>
         <span style={{ color: 'var(--border)', margin: '0 0.3rem' }}>/</span>
-        <Link to="/projects" style={{ textDecoration: 'none', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Projects</Link>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>New project</span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => navigate('/projects')}
+          style={{
+            background: 'none', border: 'none', color: 'var(--text-tertiary)',
+            cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: 0,
+          }}
+          title="Close"
+        >×</button>
       </header>
 
-      {/* Wider on step 2, which carries the template grid under the two cards. Step 1 is
-          one text input and stays in the narrow column it reads best in. */}
+      {/* Content */}
       <div style={{
-        width: '100%', maxWidth: step === 2 ? '1000px' : '680px', margin: '0 auto',
-        padding: '3.5rem 1.5rem 6rem',
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '2rem',
       }}>
-        <h1 style={{ fontSize: '1.9rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 0.5rem', fontFamily: 'var(--font-heading)' }}>
-          New design system
-        </h1>
-        <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0 0 1.75rem', lineHeight: 1.6 }}>
-          Name it, then choose whether to build the brand from scratch or import one you
-          already have.
-        </p>
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr',
+          gap: '4rem', maxWidth: '960px', width: '100%', alignItems: 'start',
+        }}>
+          {/* Left — name form */}
+          <div style={{ paddingTop: '1rem' }}>
+            <h1 style={{
+              fontFamily: 'var(--font-heading)', fontSize: '1.8rem',
+              fontWeight: 600, margin: '0 0 0.5rem', color: 'var(--text-primary)',
+            }}>
+              Name your design system
+            </h1>
+            <p style={{
+              fontSize: '0.9rem', color: 'var(--text-secondary)',
+              margin: '0 0 2.5rem', lineHeight: 1.6,
+            }}>
+              Just a name to start. We will walk you through the rest, one simple step at a time.
+            </p>
 
-        {/* Two steps, so the numbering says something true rather than decorating the page. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
-          {STEPS.map((s, i) => {
-            const n = i + 1;
-            const done = step > n;
-            const now = step === n;
-            return (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  fontSize: '0.78rem', fontWeight: now || done ? 600 : 400,
-                  color: now ? 'var(--accent)' : done ? 'var(--text-secondary)' : 'var(--text-tertiary)',
-                }}>
-                  <span style={{
-                    width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.66rem', fontWeight: 600,
-                    background: now ? 'var(--accent)' : done ? 'var(--bg-tertiary)' : 'transparent',
-                    border: now ? 'none' : '1px solid var(--border)',
-                    color: now ? '#fff' : 'var(--text-tertiary)',
-                  }}>
-                    {done ? '✓' : n}
-                  </span>
-                  {s}
-                </span>
-                {n < STEPS.length && (
-                  <span style={{ width: '28px', height: '1px', background: 'var(--border)' }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
+            <label style={{
+              fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em',
+              color: 'var(--text-tertiary)', textTransform: 'uppercase',
+              display: 'block', marginBottom: '0.5rem',
+            }}>
+              Project name
+            </label>
+            <input
+              autoFocus
+              className="new-proj-input"
+              placeholder="e.g. Acme Corp"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
+              style={{
+                width: '100%', padding: '0.75rem 0.9rem', borderRadius: '10px',
+                border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)', fontSize: '0.95rem', fontFamily: 'inherit',
+                outline: 'none',
+              }}
+            />
 
-        {step === 1 && (
-          <>
-            <div style={{ marginBottom: '1.75rem' }}>
-              <span style={label}>Project name</span>
-              <input
-                style={field}
-                placeholder="e.g. Acme Corp"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && named) { e.preventDefault(); setStep(2); } }}
-                autoFocus
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem' }}>
               <button
-                onClick={() => named && setStep(2)}
+                onClick={create}
                 disabled={!named}
                 style={{
-                  padding: '0.65rem 1.4rem', borderRadius: '999px', border: 'none',
+                  padding: '0.6rem 1.5rem', borderRadius: '10px', border: 'none',
                   background: named ? 'var(--accent)' : 'var(--bg-tertiary)',
                   color: named ? '#fff' : 'var(--text-tertiary)',
                   fontSize: '0.88rem', fontWeight: 600, fontFamily: 'inherit',
                   cursor: named ? 'pointer' : 'not-allowed',
+                  transition: 'background 0.15s, color 0.15s',
                 }}
               >
-                Next
+                Create project
               </button>
               {!named && (
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Give it a name to continue.</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                  Give it a name to continue.
+                </span>
               )}
             </div>
-          </>
-        )}
+          </div>
 
-        {step === 2 && (
-          <>
-            <StartChoice
-              heading={'How do you want to set up ' + projectName.trim() + '?'}
-              onPick={(key) => create(key)}
-            />
-
-            {/* Under the two cards. Each one links to its own page, opened in a new tab,
-                which is also where a template is applied — so this list only browses and
-                the half-typed name on this screen survives being curious. */}
-            <TemplateGallery />
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1.75rem' }}>
-              <button
-                onClick={() => setStep(1)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                  color: 'var(--text-secondary)', fontSize: '0.85rem', fontFamily: 'inherit',
-                }}
-              >
-                ‹ Back
-              </button>
-              {/* The way out for someone who only wants an empty project — which used to be
-                  the whole of this page, so it should not become impossible. */}
-              <button
-                onClick={() => create(null)}
-                style={{
-                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                  color: 'var(--text-tertiary)', fontSize: '0.85rem', fontFamily: 'inherit',
-                  marginLeft: 'auto',
-                }}
-              >
-                Skip for now
-              </button>
+          {/* Right — preview card + steps */}
+          <div>
+            {/* Gradient preview card */}
+            <div style={{
+              borderRadius: '16px', overflow: 'hidden',
+              background: 'linear-gradient(135deg, #7c3aed 0%, #c026d3 40%, #ec4899 100%)',
+              padding: '2rem', minHeight: '120px',
+              display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+            }}>
+              <span style={{
+                fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)',
+                marginBottom: '0.3rem',
+              }}>
+                Your design system
+              </span>
+              <span style={{
+                fontSize: '1.4rem', fontWeight: 700, color: '#fff',
+                fontFamily: 'var(--font-heading)',
+              }}>
+                {displayName}
+              </span>
             </div>
-          </>
-        )}
+
+            {/* Steps outline */}
+            <div style={{ marginTop: '2rem' }}>
+              <span style={{
+                fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'var(--text-tertiary)',
+              }}>
+                Three quick steps after this
+              </span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.25rem' }}>
+                {[
+                  { n: 1, title: 'Set up your brand', desc: 'Colours, fonts and the feel of your brand. Import what you have, start fresh or pick a template.' },
+                  { n: 2, title: 'Choose your components', desc: 'Buttons, inputs, cards and more, built from your brand and previewed before you save.' },
+                  { n: 3, title: 'Add your brand assets', desc: 'Your logo, favicon and brand documents, all in one place.' },
+                ].map(step => (
+                  <div key={step.n} style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                    <span style={{
+                      width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+                      background: 'var(--accent)', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.75rem', fontWeight: 700,
+                    }}>
+                      {step.n}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.15rem' }}>
+                        {step.title}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                        {step.desc}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <style dangerouslySetInnerHTML={{ __html: `
+        .new-proj-input:hover { border-color: var(--border-bright, var(--border)) !important; }
+        .new-proj-input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent-glow); }
+        .new-proj-input::placeholder { color: var(--text-tertiary); }
+      `}} />
     </div>
   );
 }

@@ -136,30 +136,15 @@ const ProBadge = () => (
   }}>PRO</span>
 );
 
-// A card is a link to the template's own page, and nothing else.
-//
-// It opens in a new tab on purpose: reading a template should never cost you the screen you
-// were standing on — on /projects/new that screen holds a project name that exists nowhere
-// else yet. Applying therefore happens on that page rather than here, which is why the card
-// carries no buttons of its own.
-//
-// The link is stretched across the card rather than wrapped around it. Canvas renders a
-// real <button> and a real <input>, and an <a> may not contain interactive content any more
-// than a <button> may; as a sibling it nests nothing. Being a real <a href> is also what
-// makes middle-click, ctrl-click and "open in new window" behave the way they should.
-export const TemplateCard = ({ t }) => {
+export const TemplateCard = ({ t, onUse, onPreview }) => {
   const locked = t.tier === 'pro';
   const p = t.palette;
   return (
     <div className="tpl-card" style={{
       ...card(false), padding: 0, overflow: 'hidden', cursor: 'default',
-      display: 'flex', flexDirection: 'column', position: 'relative',
-      // Through a custom property so the class below can flip it on hover and focus. The
-      // inline border card() writes would otherwise beat any rule without !important.
+      display: 'flex', flexDirection: 'column',
       border: '1px solid var(--tpl-border, var(--border))',
     }}>
-      {/* The mark is the canvas for a branded template — Canvas decides, so the card does
-          not need to know which templates have one. */}
       <Canvas t={t} />
 
       <div style={{
@@ -174,7 +159,6 @@ export const TemplateCard = ({ t }) => {
           {locked && <ProBadge />}
         </div>
 
-        {/* The three colour tokens it writes, in the strip the Colors step already uses. */}
         <div style={{ display: 'flex', gap: '0.25rem' }}>
           {[p.primary, p.secondary, p.accent].map(c => (
             <span key={c} style={{
@@ -188,17 +172,32 @@ export const TemplateCard = ({ t }) => {
           {industryName(t.industry)} · {t.vibe} · {scaleLabel(t.scaleRatio)}
         </div>
 
-        <a
-          className="sf-focus"
-          href={'/templates/' + t.id}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t.name + ' — opens in a new tab'}
-          style={{
-            position: 'absolute', inset: 0, zIndex: 1,
-            cursor: 'pointer', touchAction: 'manipulation',
-          }}
-        />
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+          <button
+            type="button"
+            className="sf-focus"
+            onClick={() => onPreview ? onPreview(t) : window.open('/templates/' + t.id, '_blank')}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0.5rem', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 600,
+              fontFamily: 'inherit', cursor: 'pointer',
+              background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+            }}
+          >Preview</button>
+          {onUse && (
+            <button
+              type="button"
+              className="sf-focus"
+              onClick={() => onUse(t)}
+              style={{
+                flex: 1, padding: '0.5rem', borderRadius: '8px', fontSize: '0.78rem',
+                fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
+                background: 'var(--accent)', color: '#fff',
+              }}
+            >Use template</button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -207,9 +206,7 @@ export const TemplateCard = ({ t }) => {
 // A Details overlay stood here, opened from the card. Cards are links to /templates/:id
 // now, so the template's own page is the detail view and this had nothing left to do.
 
-// No props at all now: the gallery browses, /templates/:id applies, and the cards show the
-// template's own identity rather than borrowing the project's name for a specimen.
-export default function TemplateGallery() {
+export default function TemplateGallery({ onUse, onPreview }) {
   const [query, setQuery] = useState('');
   const [tier, setTier] = useState('all');
   // Arrays, not single ids: OR inside a facet, AND across them. An empty array means the
@@ -455,7 +452,7 @@ export default function TemplateGallery() {
             )}
             <div style={{ ...grid('230px'), gap: '1rem' }}>
               {results.map(t => (
-                <TemplateCard key={t.id} t={t} />
+                <TemplateCard key={t.id} t={t} onUse={onUse} onPreview={onPreview} />
               ))}
             </div>
           </>

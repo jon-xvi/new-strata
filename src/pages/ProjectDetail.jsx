@@ -35,6 +35,7 @@ import {
 import { modelsFor } from '../data/modelCatalogue';
 import TemplateGallery, { TemplateCard } from '../components/newProject/TemplateGallery';
 import { TEMPLATES } from '../components/newProject/templateData';
+import TemplatePreviewPanel from '../components/newProject/TemplatePreviewPanel';
 import BrandContextEngine from '../components/BrandContextEngine';
 import StartChoice from '../components/StartChoice';
 import ScratchWizard from '../components/newProject/ScratchWizard';
@@ -198,6 +199,7 @@ const FORGE_MODES = [
 
 // Sidebar main navigation tabs — shared by the desktop list, the mobile icon rail, and the mobile nav overlay
 const MAIN_TABS = [
+  { id: 'get-started', label: 'Get started', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
   { id: 'brand', label: 'Brand Bible', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
   { id: 'handoff', label: 'Handoff', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg> },
   { id: 'tokens', label: 'Tokens', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> },
@@ -385,10 +387,11 @@ function ProjectDetailInner() {
   const project = projects.find(p => String(p.id) === String(id));
   const myRole = resolveMyRole(project, user);
 
-  const [activeTab, setActiveTab] = useState(() => sectionFor(id) || 'brand');
+  const [activeTab, setActiveTab] = useState(() => sectionFor(id) || 'get-started');
   const [tokenTableSearch, setTokenTableSearch] = useState('');
   const [copiedToken, setCopiedToken] = useState(null);
   const [mobileNavExpanded, setMobileNavExpanded] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showBranchMenu, setShowBranchMenu] = useState(false);
   const [isLightTheme, setIsLightTheme] = useState(false);
@@ -437,6 +440,8 @@ function ProjectDetailInner() {
   // the engine — those name one specific source, so a choice would be wrong there.
   const [startChoice, setStartChoice] = useState(false);
   const [scratchWizard, setScratchWizard] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
+  const [startPath, setStartPath] = useState(null);
   const [toggledTokenFolders, setToggledTokenFolders] = useState(() => new Set());
   const [previewComponentId, setPreviewComponentId] = useState(null);
   // Which token's dependents are showing. Shares the rail with previewComponentId, so
@@ -2740,6 +2745,17 @@ This document serves as our living source of truth.`
     >
       {tab.icon}
       <span className="pd-sidebar-tab-label">{tab.label}</span>
+      {tab.id === 'get-started' && (() => {
+        const done = [hasBrandContext, (project?.components || []).length > 0, Boolean(project?.brand?.logoPreview)].filter(Boolean).length;
+        return (
+          <span className="pd-sidebar-tab-badge" style={{
+            marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 600,
+            color: done === 3 ? '#34d399' : 'var(--accent)',
+          }}>
+            {done}/3
+          </span>
+        );
+      })()}
     </button>
     </React.Fragment>
   ));
@@ -3323,11 +3339,12 @@ This document serves as our living source of truth.`
       <div className="pd-shell" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
         {/* ── Left Sidebar ── */}
-        <aside className="pd-sidebar" style={{
+        <aside className={`pd-sidebar${sidebarCollapsed ? ' pd-sidebar-collapsed' : ''}`} style={{
           flexShrink: 0,
           background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column', padding: '1rem 0',
           overflowY: 'auto',
+          transition: 'width 0.2s ease',
         }}>
           {/* Mobile-only: expand the icon rail into a labeled overlay menu */}
           <button
@@ -3336,6 +3353,20 @@ This document serves as our living source of truth.`
             onClick={() => setMobileNavExpanded(true)}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+
+          {/* Collapse / expand toggle */}
+          <button
+            className="pd-sidebar-toggle"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={() => setSidebarCollapsed(c => !c)}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {sidebarCollapsed
+                ? <><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><polyline points="14 9 17 12 14 15"/></>
+                : <><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><polyline points="16 9 13 12 16 15"/></>
+              }
+            </svg>
           </button>
 
           {/* Tabs */}
@@ -3596,53 +3627,330 @@ This document serves as our living source of truth.`
         >
 
 
-          {/* Brand Bible onboarding — replaces the whole tab until a brand source exists */}
-          {activeTab === 'brand' && !hasBrandContext && (
-            <div style={{ maxWidth: '1200px' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, var(--accent-glow) 0%, var(--bg-secondary) 55%)',
-                border: '1px solid var(--border)',
-                borderRadius: '16px',
-                padding: '2.5rem',
+          {/* ── Get Started tab ── */}
+          {activeTab === 'get-started' && (() => {
+            const STEPS = [
+              { n: 1, title: 'Set up your brand', desc: 'Colours, fonts and the feel of your brand. Import what you have, start fresh or pick a template.', done: hasBrandContext },
+              { n: 2, title: 'Choose your components', desc: 'Buttons, inputs, cards and more, built from your brand and previewed before you save.', done: (project?.components || []).some(c => c.tokens && Object.keys(c.tokens).length > 0) },
+              { n: 3, title: 'Add your brand assets', desc: 'Your logo, favicon and brand documents, all in one place.', done: Boolean(project?.brand?.logoPreview) },
+            ];
+            const doneCount = STEPS.filter(s => s.done).length;
+            const currentStep = STEPS.find(s => !s.done) || STEPS[STEPS.length - 1];
+            return (
+            <div style={{ maxWidth: '800px' }}>
+              {/* Title row */}
+              <h2 style={{
+                fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600,
+                margin: '0 0 0.3rem', color: 'var(--text-primary)',
               }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  background: 'var(--accent-glow)', border: '1px solid var(--accent)',
-                  color: 'var(--accent)', borderRadius: '100px',
-                  padding: '0.3rem 0.85rem', fontSize: '0.7rem', fontWeight: 700,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}>✨ Brand Context Engine</span>
+                Let's set up {project?.name || 'your project'}
+              </h2>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '0 0 2rem' }}>
+                Three steps. Pick one below to see what is involved.
+              </p>
 
-                <h2 style={{ fontSize: '1.9rem', fontWeight: 700, margin: '1.25rem 0 0.85rem', color: 'var(--text-primary)' }}>
-                  Setup your Brand Context
-                </h2>
+              {/* Progress tracker */}
+              <div style={{
+                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                borderRadius: '16px', padding: '2rem 2.5rem', marginBottom: '2rem',
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0,
+                position: 'relative',
+              }}>
+                {STEPS.map((step, i) => (
+                  <div key={step.n} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
+                      <div style={{
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.85rem', fontWeight: 700,
+                        background: step.done ? '#34d399' : step === currentStep ? 'var(--accent)' : 'var(--bg-tertiary)',
+                        color: step.done || step === currentStep ? '#fff' : 'var(--text-tertiary)',
+                        border: step.done || step === currentStep ? 'none' : '1.5px solid var(--border)',
+                        transition: 'all 0.3s',
+                      }}>
+                        {step.done ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        ) : step.n}
+                      </div>
+                      <span style={{
+                        fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)',
+                        marginTop: '0.6rem', textAlign: 'center',
+                      }}>
+                        {step.title}
+                      </span>
+                      <span style={{
+                        fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.04em',
+                        color: step === currentStep ? 'var(--accent)' : 'var(--text-tertiary)',
+                        marginTop: '0.2rem', textTransform: 'uppercase',
+                      }}>
+                        {step.done ? 'Done' : step === currentStep ? 'Current step' : 'To do'}
+                      </span>
+                    </div>
+                    {i < STEPS.length - 1 && (
+                      <div style={{
+                        flex: 1, height: '2px', background: step.done ? '#34d399' : 'var(--border)',
+                        marginTop: '-1.2rem', transition: 'background 0.3s',
+                      }} />
+                    )}
+                  </div>
+                ))}
+                <div style={{ position: 'absolute', top: '1rem', right: '1.5rem', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                  {doneCount} of 3 complete
+                </div>
+              </div>
 
-                <p style={{ fontSize: '0.92rem', lineHeight: 1.7, color: 'var(--text-secondary)', maxWidth: '46rem', margin: 0 }}>
-                  Define your brand identity using descriptions, logo assets, website links, Figma
-                  variables, or JSON tokens. Strata's AI will parse these sources to extract colors,
-                  typography, and automatically bootstrap your design system tokens and component specs.
-                </p>
+              {/* Current step detail */}
+              <div style={{
+                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                borderRadius: '16px', padding: '2rem 2.5rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                  <div>
+                    <span style={{
+                      fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em',
+                      textTransform: 'uppercase', color: 'var(--text-tertiary)',
+                    }}>
+                      Step {currentStep.n} of 3
+                    </span>
+                    <h3 style={{
+                      margin: '0.3rem 0 0', fontSize: '1.25rem', fontWeight: 700,
+                      color: 'var(--text-primary)', fontFamily: 'var(--font-heading)',
+                    }}>
+                      {currentStep.title}
+                    </h3>
+                  </div>
+                </div>
 
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.9rem', marginBottom: 0 }}>
-                  {completeness.done} of {completeness.total} provided &middot; add any of it whenever you like.
-                </p>
+                {/* Step 1: brand setup — show the 3-card chooser */}
+                {currentStep.n === 1 && (
+                  <>
+                    <StartChoice
+                      selected={startPath}
+                      onPick={(key) => {
+                        if (key === 'template') {
+                          setStartPath(key);
+                        } else {
+                          setStartPath(null);
+                          if (key === 'engine') openBrandEngine();
+                          else setScratchWizard(true);
+                        }
+                      }}
+                    />
 
-                <button
-                  onClick={() => setStartChoice(true)}
-                  className="btn btn-primary"
-                  style={{
-                    marginTop: '1.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.7rem 1.5rem', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600,
-                  }}
-                >
-                  Get Started
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                  </svg>
-                </button>
+                    {startPath === 'template' && (
+                      <div style={{ marginTop: '2rem' }}>
+                        <TemplateGallery onPreview={setPreviewTemplate} onUse={(t) => {
+                          setStartPath(null);
+                          setScratchWizard({
+                            paletteId: t.paletteId,
+                            fontPairingId: t.pairingId,
+                            industry: t.industry,
+                            primaryVibe: t.vibe,
+                            scale: t.scale,
+                          });
+                        }} />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Step 2: components */}
+                {currentStep.n === 2 && (
+                  <div>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '0 0 1rem', lineHeight: 1.6 }}>
+                      {currentStep.desc}
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('components')}
+                      style={{
+                        padding: '0.55rem 1.25rem', borderRadius: '8px', border: 'none',
+                        background: 'var(--accent)', color: '#fff', fontSize: '0.85rem',
+                        fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                      }}
+                    >
+                      Go to Components
+                    </button>
+                  </div>
+                )}
+
+                {/* Step 3: assets */}
+                {currentStep.n === 3 && (
+                  <div>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '0 0 1rem', lineHeight: 1.6 }}>
+                      {currentStep.desc}
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('brand')}
+                      style={{
+                        padding: '0.55rem 1.25rem', borderRadius: '8px', border: 'none',
+                        background: 'var(--accent)', color: '#fff', fontSize: '0.85rem',
+                        fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                      }}
+                    >
+                      Go to Brand Bible
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+            );
+          })()}
+
+          {/* Brand Bible onboarding — replaces the whole tab until a brand source exists */}
+          {activeTab === 'brand' && !hasBrandContext && (() => {
+            const CHECKLIST = [
+              {
+                id: 'colors', label: 'Brand colors', desc: 'Pick a palette or define custom colors',
+                done: Boolean(project?.brand?.primaryColor),
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="var(--accent)" stroke="none"/>
+                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" opacity="0.4"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'typography', label: 'Typography', desc: 'Choose heading and body font pairings',
+                done: Boolean(project?.brand?.headingFont),
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'logo', label: 'Logo', desc: 'Upload or generate a logo mark',
+                done: Boolean(project?.brand?.logoPreview),
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="4"/>
+                    <path d="M8 17l3-4 2 2 3-5 4 7" opacity="0.6"/>
+                    <circle cx="9" cy="9" r="2" fill="var(--accent)" stroke="none"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'voice', label: 'Voice & tone', desc: 'Define brand personality keywords',
+                done: (project?.brand?.toneKeywords || []).length > 0,
+                action: () => setScratchWizard(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 1v6M8 4v4M16 4v4M4 11h16v2a8 8 0 01-16 0v-2z"/>
+                    <path d="M12 19v4"/>
+                  </svg>
+                ),
+              },
+              {
+                id: 'context', label: 'Brand context sources', desc: 'Import from Figma, website, or tokens',
+                done: completeness.done > 0,
+                action: () => setStartChoice(true),
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path d="M12 8v4l3 3"/>
+                  </svg>
+                ),
+              },
+            ];
+            const doneCount = CHECKLIST.filter(c => c.done).length;
+            const total = CHECKLIST.length;
+            const pct = Math.round((doneCount / total) * 100);
+            const nextItem = CHECKLIST.find(c => !c.done);
+            const r = 28; const circ = 2 * Math.PI * r;
+            return (
+            <div style={{ maxWidth: '1200px' }}>
+              {/* Hero banner */}
+              <div style={{
+                background: 'linear-gradient(135deg, var(--accent-glow) 0%, var(--bg-secondary) 55%)',
+                border: '0.5px solid var(--border)',
+                borderRadius: '12px',
+                padding: '2rem 2.5rem',
+                display: 'flex', alignItems: 'center', gap: '2rem',
+                marginBottom: '1.5rem',
+              }}>
+                {/* Progress ring */}
+                <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                  <svg width="72" height="72" viewBox="0 0 72 72">
+                    <circle cx="36" cy="36" r={r} fill="none" stroke="var(--border)" strokeWidth="4"/>
+                    <circle cx="36" cy="36" r={r} fill="none" stroke="var(--accent)" strokeWidth="4"
+                      strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ - (circ * pct / 100)}
+                      transform="rotate(-90 36 36)" style={{ transition: 'stroke-dashoffset 0.6s ease' }}/>
+                  </svg>
+                  <span style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)',
+                  }}>{pct}%</span>
+                </div>
+                <div>
+                  <h2 style={{
+                    fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 600,
+                    color: 'var(--text-primary)', margin: '0 0 0.35rem',
+                  }}>Set up your brand</h2>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    Complete these steps to build your design system. {doneCount} of {total} done.
+                  </p>
+                </div>
+              </div>
+
+              {/* Checklist items */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {CHECKLIST.map((item) => {
+                  const isNext = nextItem && item.id === nextItem.id;
+                  return (
+                    <div key={item.id} style={{
+                      display: 'flex', alignItems: 'center', gap: '1rem',
+                      padding: '0.85rem 1.25rem',
+                      background: item.done ? 'var(--bg-secondary)' : isNext ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                      border: isNext ? '1px solid var(--accent)' : '0.5px solid var(--border)',
+                      borderRadius: '10px',
+                      opacity: item.done ? 0.6 : 1,
+                      transition: 'all 0.2s ease',
+                    }}>
+                      {/* Status indicator */}
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '8px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: item.done ? 'rgba(52,211,153,0.12)' : isNext ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                        color: item.done ? '#34d399' : isNext ? 'var(--accent)' : 'var(--text-tertiary)',
+                      }}>
+                        {item.done ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        ) : item.icon}
+                      </div>
+
+                      {/* Label */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '0.88rem', fontWeight: 550, color: 'var(--text-primary)',
+                          textDecoration: item.done ? 'line-through' : 'none',
+                        }}>{item.label}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '0.1rem' }}>
+                          {item.desc}
+                        </div>
+                      </div>
+
+                      {/* Action */}
+                      {!item.done && (
+                        <button onClick={item.action} style={{
+                          padding: '0.4rem 0.9rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600,
+                          fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+                          background: isNext ? 'var(--accent)' : 'transparent',
+                          color: isNext ? '#fff' : 'var(--accent)',
+                          border: isNext ? 'none' : '1px solid var(--accent)',
+                        }}>Set up</button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            );
+          })()}
 
           {activeTab === 'brand' && hasBrandContext && (
             <div style={{ maxWidth: '1200px' }}>
@@ -6503,7 +6811,15 @@ This document serves as our living source of truth.`
                             <div className="pd-forge-examples" style={{
                               display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '1rem',
                             }}>
-                              {shown.map(t => <TemplateCard key={t.id} t={t} />)}
+                              {shown.map(t => <TemplateCard key={t.id} t={t} onPreview={setPreviewTemplate} onUse={(tpl) => {
+                                setScratchWizard({
+                                  paletteId: tpl.paletteId,
+                                  fontPairingId: tpl.pairingId,
+                                  industry: tpl.industry,
+                                  primaryVibe: tpl.vibe,
+                                  scale: tpl.scale,
+                                });
+                              }} />)}
                             </div>
                             <p style={{ margin: '0.9rem 0 0', fontSize: '0.75rem', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
                               {project.name} has no design system yet, so anything made here comes
@@ -7962,40 +8278,62 @@ This document serves as our living source of truth.`
         /* Mobile-only surfaces, collapsed on desktop by default */
         .pd-sidebar-rail-bottom, .pd-mobile-nav-toggle { display: none; }
 
-        /* ── The sidebar rail (desktop) ─────────────────────────────────────────
-           One state, not two. It used to be a 200px list that collapsed to a 52px
-           strip of bare glyphs behind a toggle; now the name sits under its icon at
-           every width, so there is nothing to expand into and no toggle to press.
+        /* ── Sidebar toggle button ── */
+        .pd-sidebar-toggle {
+          display: flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px; margin: 0 auto 0.75rem;
+          background: none; border: 1px solid var(--border); border-radius: 6px;
+          color: var(--text-tertiary); cursor: pointer;
+          transition: color 0.15s, border-color 0.15s;
+          flex-shrink: 0;
+        }
+        .pd-sidebar-toggle:hover {
+          color: var(--text-primary); border-color: var(--border-bright, var(--border));
+        }
 
-           The buttons stretch to the rail's width rather than centring at their
-           glyph size: they carry the hover and active background, so a shrunken
-           button makes the highlight read as a floating chip. */
-        .pd-sidebar { width: 96px; }
+        /* ── Sidebar expanded (default desktop) ── */
+        .pd-sidebar { width: 192px; }
         .pd-sidebar .pd-sidebar-tabs {
           width: 100%;
-          padding: 0 0.4rem !important;
+          padding: 0 0.5rem !important;
         }
         .pd-sidebar .pd-sidebar-tab-btn {
-          flex-direction: column;
+          flex-direction: row;
           align-items: center;
-          justify-content: center;
-          gap: 0.3rem !important;
+          gap: 0.5rem !important;
           width: 100%;
-          padding: 0.6rem 0.25rem !important;
-          text-align: center !important;
-          min-height: 58px;
+          padding: 0.55rem 0.7rem !important;
+          text-align: left !important;
         }
-        .pd-sidebar .pd-sidebar-tab-btn svg { width: 16px !important; height: 16px !important; flex: none; }
-        /* "Branch & Publish" and "Collaboration" do not fit on one line at this width,
-           so they wrap rather than being clipped or ellipsed into a guess. */
+        .pd-sidebar .pd-sidebar-tab-btn svg { width: 15px !important; height: 15px !important; flex: none; }
         .pd-sidebar .pd-sidebar-tab-label {
-          font-size: 0.64rem;
-          line-height: 1.2;
-          letter-spacing: 0.01em;
-          white-space: normal;
-          overflow-wrap: anywhere;
+          font-size: 0.82rem;
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .pd-sidebar .pd-sidebar-categories { display: none; }
+
+        /* ── Sidebar collapsed ── */
+        .pd-sidebar.pd-sidebar-collapsed { width: 56px; }
+        .pd-sidebar.pd-sidebar-collapsed .pd-sidebar-tabs {
+          padding: 0 0.35rem !important;
+        }
+        .pd-sidebar.pd-sidebar-collapsed .pd-sidebar-tab-btn {
+          flex-direction: column;
+          justify-content: center;
+          gap: 0.15rem !important;
+          padding: 0.5rem 0.25rem !important;
+          text-align: center !important;
+        }
+        .pd-sidebar.pd-sidebar-collapsed .pd-sidebar-tab-label,
+        .pd-sidebar.pd-sidebar-collapsed .pd-sidebar-tab-badge {
+          display: none;
+        }
+        .pd-sidebar.pd-sidebar-collapsed .pd-sidebar-divider {
+          margin: 0.4rem 0.5rem !important;
+        }
 
 
         @media (max-width: 768px) {
@@ -8032,6 +8370,7 @@ This document serves as our living source of truth.`
           .pd-sidebar-tab-btn-active { background: rgba(252,6,148,0.08) !important; color: var(--accent) !important; }
           .pd-sidebar-tab-label { display: none; }
 
+          .pd-sidebar-toggle { display: none !important; }
           .pd-mobile-nav-toggle {
             display: flex; align-items: center; justify-content: center;
             width: 32px; height: 32px; margin: 0 0 0.5rem;
@@ -8263,23 +8602,33 @@ This document serves as our living source of truth.`
           </header>
 
           <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
-            {/* No onClose: the header carries the only way out, and passing it here would
-                put a second × inside the content. */}
             <StartChoice
+              selected={startPath}
               onPick={(key) => {
-                setStartChoice(false);
-                // Two keys, and the default is the wizard. It used to be
-                // `if scratch … else openBrandEngine()`, so anything unrecognised
-                // opened five steps of extraction work instead.
-                if (key === 'engine') openBrandEngine();
-                else setScratchWizard(true);
+                if (key === 'template') {
+                  setStartPath(key);
+                } else {
+                  setStartChoice(false);
+                  setStartPath(null);
+                  if (key === 'engine') openBrandEngine();
+                  else setScratchWizard(true);
+                }
               }}
             />
 
-            {/* Under the two cards. Each links to its own page in a new tab, and applying
-                happens there — so a template no longer seeds *this* project's wizard; it
-                creates one of its own. That is the cost of the card being a plain link. */}
-            <TemplateGallery />
+            {startPath === 'template' && (
+              <TemplateGallery onPreview={setPreviewTemplate} onUse={(t) => {
+                setStartChoice(false);
+                setStartPath(null);
+                setScratchWizard({
+                  paletteId: t.paletteId,
+                  fontPairingId: t.pairingId,
+                  industry: t.industry,
+                  primaryVibe: t.vibe,
+                  scale: t.scale,
+                });
+              }} />
+            )}
           </div>
         </div>
       )}
@@ -8305,6 +8654,22 @@ This document serves as our living source of truth.`
           onApply={applyBrandContext}
         />
       )}
+
+      <TemplatePreviewPanel
+        template={previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        onUse={(t) => {
+          setPreviewTemplate(null);
+          setStartChoice(false);
+          setScratchWizard({
+            paletteId: t.paletteId,
+            fontPairingId: t.pairingId,
+            industry: t.industry,
+            primaryVibe: t.vibe,
+            scale: t.scale,
+          });
+        }}
+      />
     </div>
   );
 }
