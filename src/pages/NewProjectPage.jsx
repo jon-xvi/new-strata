@@ -1,152 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import { TEMPLATES } from '../components/newProject/templateData';
-import { pairingById } from '../components/newProject/designSystemData';
-import { brandAssetsFor } from '../data/brandAssets';
-import TemplatePreviewPanel from '../components/newProject/TemplatePreviewPanel';
-
-const STYLE_FILTERS = ['All', ...new Set(TEMPLATES.map(t => t.vibe))];
-
-const inputStyle = {
-  width: '100%', padding: '0.7rem 0.85rem', borderRadius: '8px',
-  border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-  color: 'var(--text-primary)', fontSize: '0.95rem', fontFamily: 'inherit',
-  outline: 'none',
-};
-
-// --- Illustrative SVGs for path cards ---
-
-const ScratchIllustration = () => (
-  <svg viewBox="0 0 120 64" fill="none" style={{ width: '100%', marginBottom: '0.6rem' }}>
-    <line x1="60" y1="10" x2="60" y2="50" stroke="var(--text-secondary)" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="60" cy="10" r="3" fill="var(--accent)" opacity="0.6"/>
-    <path d="M38 20 L40 16 L42 20 L40 24Z" fill="var(--accent)" opacity="0.3"/>
-    <path d="M78 28 L80 24 L82 28 L80 32Z" fill="var(--accent)" opacity="0.25"/>
-    <path d="M46 38 L47 36 L48 38 L47 40Z" fill="var(--accent)" opacity="0.2"/>
-    <path d="M72 14 L73 12 L74 14 L73 16Z" fill="var(--accent)" opacity="0.2"/>
-    <rect x="28" y="48" width="24" height="8" rx="4" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="56" y="48" width="16" height="8" rx="4" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="76" y="48" width="20" height="8" rx="4" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="31" y="50.5" width="18" height="3" rx="1.5" fill="var(--accent)" opacity="0.3"/>
-    <rect x="59" y="50.5" width="10" height="3" rx="1.5" fill="var(--text-secondary)" opacity="0.3"/>
-    <rect x="79" y="50.5" width="14" height="3" rx="1.5" fill="var(--text-tertiary)" opacity="0.3"/>
-  </svg>
-);
-
-const ImportIllustration = () => (
-  <svg viewBox="0 0 120 64" fill="none" style={{ width: '100%', marginBottom: '0.6rem' }}>
-    <rect x="14" y="12" width="18" height="24" rx="4" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <circle cx="23" cy="20" r="4" fill="var(--accent)" opacity="0.3"/>
-    <rect x="18" y="28" width="10" height="4" rx="2" fill="var(--text-tertiary)" opacity="0.3"/>
-    <rect x="88" y="12" width="18" height="24" rx="4" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="92" y="16" width="10" height="2" rx="1" fill="var(--text-secondary)" opacity="0.3"/>
-    <rect x="92" y="20" width="10" height="6" rx="2" fill="var(--text-tertiary)" opacity="0.2"/>
-    <rect x="92" y="28" width="6" height="4" rx="2" fill="var(--accent)" opacity="0.2"/>
-    <circle cx="60" cy="24" r="12" fill="var(--bg-tertiary)" stroke="var(--accent)" strokeWidth="0.5" opacity="0.6"/>
-    <path d="M55 24 L58 21 L58 27Z" fill="var(--accent)" opacity="0.5"/>
-    <path d="M65 24 L62 21 L62 27Z" fill="var(--accent)" opacity="0.5"/>
-    <path d="M32 24 Q 42 24 48 24" stroke="var(--border)" strokeWidth="0.5"/>
-    <path d="M88 24 Q 78 24 72 24" stroke="var(--border)" strokeWidth="0.5"/>
-    <path d="M60 36 L60 48" stroke="var(--border)" strokeWidth="0.5"/>
-    <rect x="44" y="48" width="32" height="10" rx="5" fill="var(--bg-tertiary)" stroke="var(--accent)" strokeWidth="0.5" opacity="0.5"/>
-    <rect x="50" y="51" width="20" height="4" rx="2" fill="var(--accent)" opacity="0.25"/>
-  </svg>
-);
-
-// --- Featured template mini-card ---
-
-const FeaturedCard = ({ t, onClick, onPreview }) => {
-  const pair = pairingById(t.pairingId);
-  const brand = brandAssetsFor(t.id);
-  const p = t.palette;
-
-  return (
-    <div
-      className="new-tpl-card"
-      style={{
-        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-        borderRadius: '10px', overflow: 'hidden', padding: 0,
-        textAlign: 'left', fontFamily: 'inherit', width: '100%',
-        display: 'flex', flexDirection: 'column',
-      }}
-    >
-      <div style={{
-        height: '110px', background: p.secondary,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {brand ? (
-          <span style={{
-            width: '46px', height: '46px', borderRadius: '12px', background: '#fff',
-            border: '1px solid rgba(0,0,0,0.08)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <img src={brand.logo} alt="" width="32" height="32" style={{ objectFit: 'contain' }} />
-          </span>
-        ) : (
-          <span style={{
-            fontFamily: pair ? `'${pair.heading}', sans-serif` : 'inherit',
-            fontSize: '1.1rem', fontWeight: 600, color: p.primary,
-          }}>
-            {t.name}
-          </span>
-        )}
-      </div>
-      <div style={{ padding: '0.7rem 0.85rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
-        <div style={{ fontSize: '0.84rem', fontWeight: 500, color: 'var(--text-primary)' }}>
-          {t.name}
-        </div>
-        <div style={{ display: 'flex', gap: '3px' }}>
-          <span style={{ flex: 1, height: 6, borderRadius: 3, background: p.primary }} />
-          <span style={{ flex: 1, height: 6, borderRadius: 3, background: p.secondary }} />
-          <span style={{ flex: 1, height: 6, borderRadius: 3, background: p.accent }} />
-        </div>
-        {pair && (
-          <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
-            {pair.heading} + {pair.body}
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onPreview ? onPreview(t) : window.open('/templates/' + t.id, '_blank'); }}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '0.45rem', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 600,
-              fontFamily: 'inherit', cursor: 'pointer',
-              background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-            }}
-          >Preview</button>
-          <button
-            type="button"
-            onClick={onClick}
-            style={{
-              flex: 1, padding: '0.45rem', borderRadius: '8px', fontSize: '0.76rem',
-              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
-              background: 'var(--accent)', color: '#fff',
-            }}
-          >Use template</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Main page ---
 
 export default function NewProjectPage() {
   const navigate = useNavigate();
   const { addProject } = useProjects();
   const [projectName, setProjectName] = useState('');
-  const [activePath, setActivePath] = useState(null);
-  const [styleFilter, setStyleFilter] = useState('All');
-  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   const named = projectName.trim().length > 0;
 
-  const create = (setup) => {
+  const create = () => {
     if (!named) return;
     const project = addProject({
       title: projectName.trim(),
@@ -154,178 +17,178 @@ export default function NewProjectPage() {
       color: '#FC0694',
       brand: { toneKeywords: [] },
     });
-    navigate('/projects/' + project.id, setup ? { state: { setup } } : undefined);
+    navigate('/projects/' + project.id, { state: { created: true } });
   };
 
-  const handleTemplatePick = (template) => {
-    if (!named) return;
-    const project = addProject({
-      title: projectName.trim(),
-      description: '',
-      color: template.palette.primary,
-      brand: { toneKeywords: [] },
-    });
-    navigate('/projects/' + project.id, {
-      state: { setup: 'scratch', template: {
-        paletteId: template.paletteId,
-        fontPairingId: template.pairingId,
-        industry: template.industry,
-        primaryVibe: template.vibe,
-        scale: template.scale,
-      }},
-    });
-  };
-
-  const handlePathPick = (path) => {
-    setActivePath(path);
-    if (path === 'scratch') create('scratch');
-    else if (path === 'import') create('engine');
-  };
-
-  const filtered = styleFilter === 'All' ? TEMPLATES : TEMPLATES.filter(t => t.vibe === styleFilter);
+  const displayName = named ? projectName.trim() : 'Untitled';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      minHeight: '100vh', background: 'var(--bg)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Header */}
       <header style={{
         display: 'flex', alignItems: 'center', gap: '0.5rem', height: '56px', flexShrink: 0,
         padding: '0 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)',
       }}>
-        <Link to="/projects" style={{ textDecoration: 'none', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+        <Link to="/projects" style={{
+          textDecoration: 'none', fontFamily: 'var(--font-heading)',
+          fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)',
+        }}>
           Strata<span style={{ color: 'var(--accent)' }}>.</span>
         </Link>
         <span style={{ color: 'var(--border)', margin: '0 0.3rem' }}>/</span>
         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>New project</span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => navigate('/projects')}
+          style={{
+            background: 'none', border: 'none', color: 'var(--text-tertiary)',
+            cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: 0,
+          }}
+          title="Close"
+        >×</button>
       </header>
 
-      <div style={{ width: '100%', maxWidth: '820px', margin: '0 auto', padding: '3rem 2.5rem 4rem' }}>
-        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 500, margin: '0 0 0.25rem' }}>
-          Create your design system
-        </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 2rem', lineHeight: 1.6 }}>
-          Give your project a name, then choose how to get started.
-        </p>
+      {/* Content */}
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '2rem',
+      }}>
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr',
+          gap: '4rem', maxWidth: '960px', width: '100%', alignItems: 'start',
+        }}>
+          {/* Left — name form */}
+          <div style={{ paddingTop: '1rem' }}>
+            <h1 style={{
+              fontFamily: 'var(--font-heading)', fontSize: '1.8rem',
+              fontWeight: 600, margin: '0 0 0.5rem', color: 'var(--text-primary)',
+            }}>
+              Name your design system
+            </h1>
+            <p style={{
+              fontSize: '0.9rem', color: 'var(--text-secondary)',
+              margin: '0 0 2.5rem', lineHeight: 1.6,
+            }}>
+              Just a name to start. We will walk you through the rest, one simple step at a time.
+            </p>
 
-        {/* Project name */}
-        <div style={{ marginBottom: '2.25rem' }}>
-          <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.45rem' }}>
-            Project name
-          </label>
-          <input
-            style={inputStyle}
-            placeholder="e.g. Acme Corp"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            className="new-proj-input"
-            autoFocus
-          />
-        </div>
-
-        {/* Quick-start cards */}
-        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.75rem' }}>
-          Build your own way
-        </label>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '2.75rem' }}>
-          {[
-            { key: 'scratch', label: 'Start from scratch', desc: 'Pick colors, fonts, and voice with a guided setup.', Illustration: ScratchIllustration },
-            { key: 'import', label: 'Import what you have', desc: 'Bring in tokens from Figma, a live site, or a JSON file.', Illustration: ImportIllustration },
-          ].map(opt => (
-            <button
-              key={opt.key}
-              onClick={() => handlePathPick(opt.key)}
-              className="new-path-card"
+            <label style={{
+              fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em',
+              color: 'var(--text-tertiary)', textTransform: 'uppercase',
+              display: 'block', marginBottom: '0.5rem',
+            }}>
+              Project name
+            </label>
+            <input
+              autoFocus
+              className="new-proj-input"
+              placeholder="e.g. Acme Corp"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
               style={{
-                background: activePath === opt.key ? 'var(--accent-glow)' : 'var(--bg-secondary)',
-                border: activePath === opt.key ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                borderRadius: '12px', padding: '1.25rem', cursor: 'pointer',
-                textAlign: 'left', fontFamily: 'inherit',
+                width: '100%', padding: '0.75rem 0.9rem', borderRadius: '10px',
+                border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)', fontSize: '0.95rem', fontFamily: 'inherit',
+                outline: 'none',
               }}
-            >
-              <opt.Illustration />
-              <div style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                {opt.label}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {opt.desc}
-              </div>
-            </button>
-          ))}
-        </div>
+            />
 
-        {/* Templates with style filter */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '0.92rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
-            Or start from a template
-          </div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', margin: '0 0 0.85rem', lineHeight: 1.5 }}>
-            Pre-built palettes, type pairings, and brand settings you can customize later.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-            {STYLE_FILTERS.map(s => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem' }}>
               <button
-                key={s}
-                onClick={() => setStyleFilter(s)}
-                className="style-chip"
+                onClick={create}
+                disabled={!named}
                 style={{
-                  padding: '0.3rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem',
-                  fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-                  background: styleFilter === s ? 'var(--accent)' : 'var(--bg-tertiary)',
-                  color: styleFilter === s ? '#fff' : 'var(--text-secondary)',
-                  border: styleFilter === s ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  padding: '0.6rem 1.5rem', borderRadius: '10px', border: 'none',
+                  background: named ? 'var(--accent)' : 'var(--bg-tertiary)',
+                  color: named ? '#fff' : 'var(--text-tertiary)',
+                  fontSize: '0.88rem', fontWeight: 600, fontFamily: 'inherit',
+                  cursor: named ? 'pointer' : 'not-allowed',
+                  transition: 'background 0.15s, color 0.15s',
                 }}
               >
-                {s}
+                Create project
               </button>
-            ))}
+              {!named && (
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                  Give it a name to continue.
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '0.25rem' }}>
-          {filtered.map(t => (
-            <FeaturedCard
-              key={t.id}
-              t={t}
-              onClick={() => handleTemplatePick(t)}
-              onPreview={setPreviewTemplate}
-            />
-          ))}
-        </div>
+          {/* Right — preview card + steps */}
+          <div>
+            {/* Gradient preview card */}
+            <div style={{
+              borderRadius: '16px', overflow: 'hidden',
+              background: 'linear-gradient(135deg, #7c3aed 0%, #c026d3 40%, #ec4899 100%)',
+              padding: '2rem', minHeight: '120px',
+              display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+            }}>
+              <span style={{
+                fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)',
+                marginBottom: '0.3rem',
+              }}>
+                Your design system
+              </span>
+              <span style={{
+                fontSize: '1.4rem', fontWeight: 700, color: '#fff',
+                fontFamily: 'var(--font-heading)',
+              }}>
+                {displayName}
+              </span>
+            </div>
 
-        {/* Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)' }}>
-          <Link to="/projects" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            ‹ Back
-          </Link>
-          <button
-            onClick={() => create(null)}
-            disabled={!named}
-            style={{
-              background: 'none', border: 'none', fontSize: '0.82rem',
-              color: named ? 'var(--text-tertiary)' : 'var(--text-tertiary)',
-              opacity: named ? 1 : 0.5,
-              cursor: named ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
-            }}
-          >
-            Skip, create empty project
-          </button>
+            {/* Steps outline */}
+            <div style={{ marginTop: '2rem' }}>
+              <span style={{
+                fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'var(--text-tertiary)',
+              }}>
+                Three quick steps after this
+              </span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.25rem' }}>
+                {[
+                  { n: 1, title: 'Set up your brand', desc: 'Colours, fonts and the feel of your brand. Import what you have, start fresh or pick a template.' },
+                  { n: 2, title: 'Choose your components', desc: 'Buttons, inputs, cards and more, built from your brand and previewed before you save.' },
+                  { n: 3, title: 'Add your brand assets', desc: 'Your logo, favicon and brand documents, all in one place.' },
+                ].map(step => (
+                  <div key={step.n} style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                    <span style={{
+                      width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+                      background: 'var(--accent)', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.75rem', fontWeight: 700,
+                    }}>
+                      {step.n}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.15rem' }}>
+                        {step.title}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                        {step.desc}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .new-proj-input:hover { border-color: var(--border-bright) !important; }
-        .new-proj-input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 1px var(--accent-glow); }
+        .new-proj-input:hover { border-color: var(--border-bright, var(--border)) !important; }
+        .new-proj-input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent-glow); }
         .new-proj-input::placeholder { color: var(--text-tertiary); }
-        .new-path-card:hover { border-color: var(--border-bright) !important; }
-        .new-tpl-card:hover { border-color: var(--border-bright) !important; transform: translateY(-2px); }
-        .new-tpl-card { transition: border-color 0.15s, transform 0.15s; }
-        .style-chip:hover { border-color: var(--border-bright) !important; }
       `}} />
-
-      <TemplatePreviewPanel
-        template={previewTemplate}
-        onClose={() => setPreviewTemplate(null)}
-        onUse={(t) => { setPreviewTemplate(null); handleTemplatePick(t); }}
-      />
     </div>
   );
 }
